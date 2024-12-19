@@ -1,0 +1,146 @@
+install.packages("ggplot2")
+library(ggplot2)
+
+install.packages("car")
+library(car)
+
+ch <- choose.files()
+
+data1 <- readxl::read_xlsx(ch)
+View(data1)
+
+
+summary(data1)
+
+#les variables
+cols <- colnames(data1)
+cols
+# Nuage de points pour les colonnes sélectionnées
+selected_columns <- -c(1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 16, 18)
+pairs(data1[, selected_columns])
+
+model1 = lm(price ~wheelbase + enginesize + carlength +boreratio+stroke+compressionratio+ carwidth +carheight +
+              curbweight + peakrpm + citympg + highwaympg+
+              horsepower ,  data = data1)
+
+summary(model1)
+
+
+#test de multicollinéarité
+vif(model1)  #variance inflation factor
+1/vif(model1)
+
+# Afficher la matrice de corrélation pour les variables explicatives
+correlation_matrix <- cor(data1[, -c(1, 2 , 3,4,5,6,7,8,9, 15,16,18)])
+
+# Afficher la matrice de corrélation
+print(correlation_matrix)
+
+
+model2 = lm(price ~wheelbase + enginesize + boreratio + stroke+compressionratio+ carwidth +
+              peakrpm + citympg +horsepower ,  data = data1)
+
+
+summary(model2)
+
+vif(model2)
+confint(model2)
+
+model3 = lm(price ~ enginesize + stroke + compressionratio +
+              peakrpm + horsepower ,  data = data1)
+
+
+summary(model3)
+
+install.packages("QuantPsyc")
+library(QuantPsyc)
+lm.beta(model3)  #coefficients centrés réduits
+
+
+library(car)
+avPlots(model3)
+
+anova(model3)
+
+
+
+#la prédection
+
+
+ch1 <- choose.files()
+
+data_test <- readxl::read_xlsx(ch1)
+
+data_test <- data_test[, c("enginesize", "stroke", "compressionratio",
+                           "peakrpm", "horsepower")]
+
+
+summary(data_test)
+
+# Effectuer la prédiction sur les données de test
+y_predict <- predict(model3, newdata = data_test)
+
+# Afficher les 10 premières valeurs prédites
+head(y_predict, 10)
+
+
+
+
+
+
+library(ggplot2)
+
+ch2 <- choose.files()
+data_test2 <- readxl::read_xlsx(ch2)
+y_test = data_test2$price
+y_test
+ggplot() +
+  geom_point(aes(x = y_test, y = y_predict)) +
+  geom_abline(slope = 1, color ='darkred') +
+  geom_segment(aes(x =y_test ,
+                   y = y_test, xend = y_test, yend = y_predict),
+               color = 'red') +
+  ylab("Predicted car price")+xlab("car price")
+
+
+
+
+
+# Charger le package mgcv pour ajuster le modèle SPL
+install.packages("mgcv")
+library(mgcv)
+
+# Créer le modèle semi-paramétrique partiellement linéaire (SPL)
+
+model4 <- gam(price ~ s(enginesize) + s(stroke) + s(compressionratio) +
+                s(peakrpm) + s(horsepower), data = data1)
+
+# Afficher un résumé du modèle
+summary(model4)
+
+y_predict2 <- predict(model4, newdata = data_test)
+
+#Afficher les 10 premières valeurs prédites
+head(y_predict2, 10)
+
+ggplot() +
+  geom_point(aes(x = y_test, y = y_predict2)) +
+  geom_abline(slope = 1, color ='darkred') +
+  geom_segment(aes(x =y_test ,
+                   y = y_test, xend = y_test, yend = y_predict2),
+               color = 'red') +
+  ylab("Predicted car price")+xlab("car price")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
